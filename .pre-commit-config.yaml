@@ -1,0 +1,51 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^backend/
+      - id: ruff-format
+        files: ^backend/
+
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        files: ^backend/
+        args: ["--line-length=100"]
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        files: ^dashboard/.*\.(ts|tsx|js|jsx|css|json|md|yml|yaml)$
+
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint (dashboard)
+        language: system
+        entry: bash -c 'cd dashboard && npx --no-install eslint --max-warnings=0 "src/**/*.{ts,tsx}"'
+        files: ^dashboard/src/.*\.(ts|tsx)$
+        pass_filenames: false
+
+  - repo: https://github.com/trufflesecurity/trufflehog
+    rev: v3.79.0
+    hooks:
+      - id: trufflehog
+        name: trufflehog (secret scan)
+        entry: trufflehog filesystem --no-update --fail .
+        language: system
+        pass_filenames: false
