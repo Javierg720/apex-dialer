@@ -1,0 +1,54 @@
+name: infra-ci
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infrastructure/**"
+      - "docker-compose*.yml"
+      - "**/Dockerfile"
+      - ".github/workflows/infra-ci.yml"
+  pull_request:
+    paths:
+      - "infrastructure/**"
+      - "docker-compose*.yml"
+      - "**/Dockerfile"
+      - ".github/workflows/infra-ci.yml"
+
+concurrency:
+  group: infra-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compose-validate:
+    name: compose config validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Seed .env from template
+        run: cp .env.template .env
+
+      - name: Validate base compose
+        run: docker compose -f docker-compose.yml config --quiet
+
+      - name: Validate dev overrides
+        run: docker compose -f docker-compose.yml -f docker-compose.dev.yml config --quiet
+
+  hadolint:
+    name: hadolint Dockerfiles
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dockerfile:
+          - backend/Dockerfile
+          - dashboard/Dockerfile
+          - infrastructure/nginx/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: ${{ matrix.dockerfile }}
+          failure-threshold: warning
+          ignore: DL3008,DL3018
